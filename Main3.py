@@ -6,6 +6,8 @@ from imutils import rotate
 from imutils import resize
 
 
+
+
 def image_to_string(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #th3 = cv2.Canny(img, 100, 200)
@@ -35,7 +37,7 @@ def to_gray(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
-def bbox_f(img, l):
+def get_bbox_of_img(img, l):
     bboxes = list()
     for objects in range(0, len(msr.find_objects(l))):
         nonzero = (l == 1).nonzero()
@@ -99,7 +101,7 @@ while cap.isOpened():
     cv2.putText(frame, str(c), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 255))
     modframe = draw_rectangle(frame, l)
     # out.write(frame)
-    bboxes = bbox_f(frame, l)
+    bboxes = get_bbox_of_img(frame, l)
     cv2.imwrite('python.png', modframe)
 
     ind = 0

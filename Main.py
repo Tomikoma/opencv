@@ -19,32 +19,31 @@ def main():
     # frame_height = int(cap.get(4))
     # out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 15, (frame_width, frame_height))
 
-    dict_counter = 0
-    frame_counter = 0
-    counter_max_value = 60
     dict_array = []
     while cap.isOpened():
-        if frame_counter == 0:
+        current_time = int(cap.get(cv2.CAP_PROP_POS_MSEC)/1000)
+        if len(dict_array) == current_time:
             dict_array.append(dict())
-        frame_counter = frame_counter + 1
-        print("FRAME COUNTER", frame_counter)
+        print("curr_time: " + str(current_time))
         _, frame = cap.read()
+
         if video == "20190208_075319.mp4":
             frame = rotate(frame, -90)
+
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, lower, upper)
         res = cv2.bitwise_and(frame, frame, mask=mask)
         # cv2.imshow("+",resize(res, 1200, 800))
 
         gray = utils.to_gray(res)
-        c, l = cv2.connectedComponents(gray, connectivity=8)
+        components, labels = cv2.connectedComponents(gray, connectivity=8)
 
 
-        cv2.putText(frame, str(c), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 255))
+        cv2.putText(frame, str(components), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 255))
         #l = msr.find_objects()
-        modframe = utils.draw_rectangle(frame, l)
+        modframe = utils.draw_rectangle(frame, labels)
         # out.write(frame)
-        bboxes = utils.get_bbox_of_img(frame, l)
+        bboxes = utils.get_bbox_of_img(frame, labels)
 
         ind = 0
 
@@ -63,45 +62,37 @@ def main():
                         for _str in splitted_str:
                             if len(_str.split(' ')) == 1:
                                 if len(_str) > 3:
-                                    if _str[:4] not in dict_array[dict_counter]:
-                                        dict_array[dict_counter][_str[:4]] = 1
+                                    if _str[:4] not in dict_array[current_time]:
+                                        dict_array[current_time][_str[:4]] = 1
                                     else:
-                                        dict_array[dict_counter][_str[:4]] = dict_array[dict_counter].get(_str[:4]) + 1
-                                if len(_str) > 4:
-                                    if _str[:5] not in dict_array[dict_counter]:
-                                        dict_array[dict_counter][_str[:5]] = 1
-                                    else:
-                                        dict_array[dict_counter][_str[:5]] = dict_array[dict_counter].get(_str[:5]) + 1
-                    else:
-                        ocr_string = 'Nothing can be recognized'
+                                        dict_array[current_time][_str[:4]] = dict_array[current_time].get(_str[:4]) + 1
 
+
+                                if len(_str) > 4:
+                                    if _str[:5] not in dict_array[current_time]:
+                                        dict_array[current_time][_str[:5]] = 1
+                                    else:
+                                        dict_array[current_time][_str[:5]] = dict_array[current_time].get(_str[:5]) + 1
                     crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
                     crop_img = cv2.resize(crop_img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
                     cv2.imshow('cro',th3)
                     # cv2.imshow("cropped" + str(ind), th3)
             ind = ind + 1
 
-        if dict_counter > 3:
-            md = utils.merge_dicts(dict_array[dict_counter],dict_array[dict_counter-1],dict_array[dict_counter-2],dict_array[dict_counter-3],dict_array[dict_counter-4])
+        if current_time > 3:
+            md = utils.merge_dicts(dict_array[current_time],dict_array[current_time-1],dict_array[current_time-2],dict_array[current_time-3],dict_array[current_time-4])
             enar4, enar5 = utils.get_enar_from_dict(md)
 
             if enar4 != "" and enar5 != "":
                 cv2.putText(modframe, "Enar: " + enar4 + "(" + enar5[-1] + ")", (40, 200), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (200, 200, 255))
 
-        if frame_counter == counter_max_value:
-            frame_counter = 0
-            dict_counter = dict_counter + 1
         cv2.imshow('res', resize(modframe,1200,1200))
         k = cv2.waitKey(5) & 0xFF
         if k == 27:
             break
 
     cv2.destroyAllWindows()
-    enar4 = enar5 = ""
-    enar4_num = enar5_num = -1
-
-    print("Counter value: ",dict_counter)
 
     dc=0
     for d in dict_array:

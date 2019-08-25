@@ -1,11 +1,6 @@
 import cv2
 import numpy as np
 from imutils import rotate
-import matlab.engine
-
-
-
-
 
 if __name__ == '__main__':
     image=cv2.imread("tehen.png")

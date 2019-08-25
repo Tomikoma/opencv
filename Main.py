@@ -25,7 +25,10 @@ def main():
         if len(dict_array) == current_time:
             dict_array.append(dict())
         print("curr_time: " + str(current_time))
-        _, frame = cap.read()
+        ret, frame = cap.read()
+        if not ret:
+            break
+
 
         if video == "20190208_075319.mp4":
             frame = rotate(frame, -90)
@@ -36,22 +39,22 @@ def main():
         # cv2.imshow("+",resize(res, 1200, 800))
 
         gray = utils.to_gray(res)
-        components, labels = cv2.connectedComponents(gray, connectivity=8)
-
-
-        cv2.putText(frame, str(components), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 255))
+        output = cv2.connectedComponentsWithStats(gray, 8, cv2.CV_32S)
+        nlabels = output[0]
+        labels = output[1]
+        stats = output[2]
+        cv2.putText(frame, str(nlabels), (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 255))
         #l = msr.find_objects()
-        modframe = utils.draw_rectangle(frame, labels)
+        modframe = utils.draw_rectangle(nlabels, frame, stats)
         # out.write(frame)
-        bboxes = utils.get_bbox_of_img(frame, labels)
-
+        bboxes = utils.get_bounding_rect(nlabels, stats)
         ind = 0
 
         for bbox in bboxes:
 
             if (isinstance(bbox, tuple)):
                 crop_img = utils.crop_image(frame, bbox)
-                if (crop_img.shape[0] > 25 and crop_img.shape[1] > 25):
+                if (crop_img.shape[0] > 30 and crop_img.shape[1] > 30):
                     #print('Size: ' + str(crop_img.size) + ', H: ' + str(crop_img.shape[0]) + ', W: ' + str(crop_img.shape[0]))
                     ocr_string, th3 = utils.image_to_string(crop_img)
                     if (ocr_string):

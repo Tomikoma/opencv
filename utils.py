@@ -65,14 +65,15 @@ def image_to_string(img):
 
 
 # function for drawing rectangle (visualization)
-def draw_rectangle(img, l):  # https://www.programcreek.com/python/example/104526/scipy.ndimage.measurements.label -> draw_labeled_bboxes
-    for objects in range(1, len(msr.find_objects(l))):
-        nonzero = (l == 1).nonzero()
-        nonzeroy = np.array(nonzero[0])
-        nonzerox = np.array(nonzero[1])
-        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+def draw_rectangle(nlabels, img, stats):  # https://www.programcreek.com/python/example/104526/scipy.ndimage.measurements.label -> draw_labeled_bboxes
+    for label in range(1, nlabels):
+        x = stats[label, cv2.CC_STAT_LEFT]
+        y = stats[label, cv2.CC_STAT_TOP]
+        width = stats[label, cv2.CC_STAT_WIDTH]
+        height = stats[label, cv2.CC_STAT_HEIGHT]
+        bbox = (x, y), (x + width, y + height)
         bbox = (bbox[0][0] - 3, bbox[0][1] - 3), (bbox[1][0] + 3, bbox[1][1] + 3)
-        if (bbox[1][1] - bbox[0][1] > 20 and bbox[1][0] - bbox[0][0] > 20):
+        if bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25:
             cv2.rectangle(img, (bbox[0][0], bbox[0][1]), (bbox[1][0], bbox[1][1]), (0, 0, 255), 1)
     return img
 
@@ -81,16 +82,17 @@ def to_gray(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
-def get_bbox_of_img(img, l):
+def get_bounding_rect(nlabels, stats):
     bboxes = list()
-    for objects in range(0, len(msr.find_objects(l))):
-        nonzero = (l == 1).nonzero()
-        nonzeroy = np.array(nonzero[0])
-        nonzerox = np.array(nonzero[1])
-        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+    for label in range(1, nlabels):
+        x = stats[label, cv2.CC_STAT_LEFT]
+        y = stats[label, cv2.CC_STAT_TOP]
+        width = stats[label, cv2.CC_STAT_WIDTH]
+        height = stats[label, cv2.CC_STAT_HEIGHT]
+        bbox = (x,y), (x + width, y + height)
         bbox = (bbox[0][0] - 3, bbox[0][1] - 3), (bbox[1][0] + 3, bbox[1][1] + 3)
 
-        if (bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25):
+        if bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25:
             bboxes.append(bbox)
 
     return bboxes

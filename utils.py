@@ -58,14 +58,20 @@ def image_to_string(img):
     cv2.imshow("edges", edges)
     #img = rotate(img, get_rotation_angle(edges))
     th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5)  # thresholding
-    th3 = cv2.resize(th3, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)  # interpolation for better results
+    (h, w) = th3.shape
+    greater = h if h > w else w
+    ratio = 150/greater
+    # print("H: " + str(h) + ", W: "  + str(w))
+    if h < 150 and w < 150:
+        th3 = cv2.resize(th3, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_CUBIC)  # interpolation for better results
     th3 = cv2.medianBlur(th3, 3)
     #th3 = cv2.bilateralFilter(th3, 9, 50, 150)
-    return (pt.image_to_string(th3, config='-c tessedit_char_whitelist=0123456789 --oem 0 --psm 6')), th3
+    return (pt.image_to_string(th3, config=' -l digits --oem 1 --psm 6 ')), th3
 
 
 # function for drawing rectangle (visualization)
 def draw_rectangle(nlabels, img, stats):  # https://www.programcreek.com/python/example/104526/scipy.ndimage.measurements.label -> draw_labeled_bboxes
+    modframe = img.copy()
     for label in range(1, nlabels):
         x = stats[label, cv2.CC_STAT_LEFT]
         y = stats[label, cv2.CC_STAT_TOP]
@@ -74,8 +80,8 @@ def draw_rectangle(nlabels, img, stats):  # https://www.programcreek.com/python/
         bbox = (x, y), (x + width, y + height)
         bbox = (bbox[0][0] - 3, bbox[0][1] - 3), (bbox[1][0] + 3, bbox[1][1] + 3)
         if bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25:
-            cv2.rectangle(img, (bbox[0][0], bbox[0][1]), (bbox[1][0], bbox[1][1]), (0, 0, 255), 1)
-    return img
+            cv2.rectangle(modframe, (bbox[0][0], bbox[0][1]), (bbox[1][0], bbox[1][1]), (0, 0, 255), 1)
+    return modframe
 
 
 def to_gray(img):

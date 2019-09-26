@@ -59,7 +59,6 @@ def main():
         bboxes = utils.get_bounding_rect(nlabels, stats)
         ind = 0
         frame_counter = frame_counter + 1
-        cv2.imwrite("images/frame" + str(frame_counter) + ".jpg", blank_image)
         for bbox in bboxes:
 
             if (isinstance(bbox, tuple)):

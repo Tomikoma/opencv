@@ -85,7 +85,7 @@ cv2.imshow("before blur", th3)
 #th3 = cv2.medianBlur(th3, 3)
 th3 = cv2.bilateralFilter(th3, 9, 50, 150)
 
-str_ = pytesseract.image_to_string(th3, config='-c tessedit_char_whitelist=0123456789 --oem 1 --psm 6 --tessdata-dir /home/tom/PycharmProjects/opencv/')
+str_ = pytesseract.image_to_string(th3, lang="digits", config='--oem 1 --psm 6')
 
 print("---")
 print(str_)

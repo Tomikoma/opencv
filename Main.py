@@ -4,6 +4,7 @@ from imutils import rotate
 from imutils import resize
 import utils
 import sys
+import datetime
 
 
 def main():
@@ -24,18 +25,18 @@ def main():
     blank_image = np.zeros([200, 200, 3], dtype=np.uint8)
     blank_image.fill(255)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('output.mp4', fourcc, float(60), (200, 200))
+    out = cv2.VideoWriter('enarvideo' + datetime.datetime.now().strftime("%Y_%m%d_%H%M%S") + '.mp4', fourcc, float(60), (200, 200))
 
     dict_array = []
     frame_counter = 0
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
     cap.get(cv2.CAP_PROP_POS_MSEC)
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, 0)
-    print(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.set(cv2.CAP_PROP_POS_MSEC, time)
     while cap.isOpened():
         current_time = int(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000)
         print(str(round(cap.get(cv2.CAP_PROP_POS_FRAMES)/cap.get(cv2.CAP_PROP_FRAME_COUNT), 3)), flush=True)
-        print(cap.get(cv2.CAP_PROP_POS_FRAMES))
+        # print(cap.get(cv2.CAP_PROP_POS_FRAMES))
         current_time = int(current_time - (time / 1000))
         if len(dict_array) == current_time:
             dict_array.append(dict())
@@ -119,27 +120,27 @@ def main():
     # writing to file
 
     if len(dict_array) > 1:
-        with open("enar.txt", "w") as f:
+        with open("enar" + datetime.datetime.now().strftime("%Y_%m%d_%H%M%S") + ".txt", "w") as f:
             i = 0
             for _ in dict_array:
                 i = i + 1
                 if i == 1:
                     m = utils.merge_dicts(dict_array[i], dict_array[i - 1])
-                    #print(m, flush=True)
+                    #print(m)
                     enar4, enar5 = utils.get_enar_from_dict(m)
-                    #print(enar4, enar5, flush=True)
+                    #print(enar4, enar5)
                     f.write(str(i) + " " + enar5 + "\n")
                 elif i == len(dict_array):
                     m = utils.merge_dicts(dict_array[i - 1], dict_array[i - 2])
-                    #print(m, flush=True)
+                    #print(m)
                     enar4, enar5 = utils.get_enar_from_dict(m)
-                    #print(enar4, enar5, flush=True)
+                    #print(enar4, enar5)
                     f.write(str(i) + " " + enar5 + "\n")
                 else:
                     m = utils.merge_dicts(dict_array[i], dict_array[i - 1], dict_array[i - 2])
-                    #print(m, flush=True)
+                    #print(m)
                     enar4, enar5 = utils.get_enar_from_dict(m)
-                    #print(enar4, enar5, flush=True)
+                    #print(enar4, enar5)
                     f.write(str(i) + " " + enar5 + "\n")
 
 

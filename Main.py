@@ -5,6 +5,7 @@ from imutils import resize
 import utils
 import sys
 import datetime
+import subprocess
 
 
 def main():
@@ -25,7 +26,8 @@ def main():
     blank_image = np.zeros([200, 200, 3], dtype=np.uint8)
     blank_image.fill(255)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter('enarvideo' + datetime.datetime.now().strftime("%Y_%m%d_%H%M%S") + '.mp4', fourcc, float(60), (200, 200))
+    filename = 'enarvideo' + datetime.datetime.now().strftime("%Y_%m%d_%H%M%S") + '.mp4'
+    out = cv2.VideoWriter(filename, fourcc, float(60), (200, 200))
 
     dict_array = []
     frame_counter = 0
@@ -118,7 +120,6 @@ def main():
         #print(d, flush=True)
 
     # writing to file
-
     if len(dict_array) > 1:
         with open("enar" + datetime.datetime.now().strftime("%Y_%m%d_%H%M%S") + ".txt", "w") as f:
             i = 0
@@ -142,6 +143,12 @@ def main():
                     enar4, enar5 = utils.get_enar_from_dict(m)
                     #print(enar4, enar5)
                     f.write(str(i) + " " + enar5 + "\n")
+
+    command = "ffmpeg -i {} {}.mp4".format(filename,filename.split(".")[0] + "converted")
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError as e:
+        print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output))
 
 
 if __name__ == '__main__':

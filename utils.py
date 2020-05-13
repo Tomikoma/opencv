@@ -4,6 +4,7 @@ import math
 import cv2
 import numpy as np
 
+# in progress
 def get_rotation_angle(edges):
     left_is_smaller = True
     y = edges.shape[0]-1
@@ -51,69 +52,71 @@ def get_rotation_angle(edges):
     print("ANGLE: ", angle)
     return angle
 
-# converting image to string
-def image_to_string(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # changing colorspace to gray (needed for processing)
-    edges = cv2.Canny(img, 75, 150)
-    cv2.imshow("edges", edges)
-    #img = rotate(img, get_rotation_angle(edges))
-    th3 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5)  # thresholding
-    (h, w) = th3.shape
+
+def get_file_extension(path: str) -> str:
+    return path.split(".")[-1]
+
+
+# return recognized string
+def image_to_string(img, lang, oem, psm) -> str:
+
+    if len(img) == 0:
+        return ""
+    # converting image to grayscale
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # adaptive thresholding
+    thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5)
+    # getting height and width
+    (h, w) = thresh.shape
     greater = h if h > w else w
     ratio = 150/greater
-    # print("H: " + str(h) + ", W: "  + str(w))
+    # if too small, interplation for better results
     if h < 150 and w < 150:
-        th3 = cv2.resize(th3, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_CUBIC)  # interpolation for better results
-    th3 = cv2.medianBlur(th3, 3)
-    #th3 = cv2.bilateralFilter(th3, 9, 50, 150)
-    return (pt.image_to_string(th3, config=' -l digits --oem 1 --psm 6 ')), th3
+        thresh = cv2.resize(thresh, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_CUBIC)  # interpolation for better results
+    # blurring for better result
+    thresh = cv2.GaussianBlur(thresh, (5, 5), 0)
+    # setting config
+    config = "-l {} --oem {} --psm {}".format(lang, oem, psm)
+    # calling pytesseract image_to_string function
+    # with the threshold of image and given config
+    return pt.image_to_string(thresh, config=config)
 
 
-# function for drawing rectangle (visualization)
-def draw_rectangle(nlabels, img, stats):  # https://www.programcreek.com/python/example/104526/scipy.ndimage.measurements.label -> draw_labeled_bboxes
-    modframe = img.copy()
-    for label in range(1, nlabels):
-        x = stats[label, cv2.CC_STAT_LEFT]
-        y = stats[label, cv2.CC_STAT_TOP]
-        width = stats[label, cv2.CC_STAT_WIDTH]
-        height = stats[label, cv2.CC_STAT_HEIGHT]
-        bbox = (x, y), (x + width, y + height)
-        bbox = (bbox[0][0] - 3, bbox[0][1] - 3), (bbox[1][0] + 3, bbox[1][1] + 3)
-        if bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25:
-            cv2.rectangle(modframe, (bbox[0][0], bbox[0][1]), (bbox[1][0], bbox[1][1]), (0, 0, 255), 1)
-    return modframe
-
-
-def to_gray(img):
-    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-
-def get_bounding_rect(nlabels, stats):
+# returns a list of bounding boxes (bboxes)
+def get_bounding_boxes(nlabels, stats) -> list:
     bboxes = list()
+    # iterating over the labels
     for label in range(1, nlabels):
-        x = stats[label, cv2.CC_STAT_LEFT]
-        y = stats[label, cv2.CC_STAT_TOP]
-        width = stats[label, cv2.CC_STAT_WIDTH]
-        height = stats[label, cv2.CC_STAT_HEIGHT]
-        bbox = (x,y), (x + width, y + height)
-        bbox = (bbox[0][0] - 3, bbox[0][1] - 3), (bbox[1][0] + 3, bbox[1][1] + 3)
-
-        if bbox[1][1] - bbox[0][1] > 25 and bbox[1][0] - bbox[0][0] > 25:
+        # getting stats of the label
+        x = stats[label, cv2.CC_STAT_LEFT] - 3
+        y = stats[label, cv2.CC_STAT_TOP] - 3
+        width = stats[label, cv2.CC_STAT_WIDTH] + 3
+        height = stats[label, cv2.CC_STAT_HEIGHT] + 3
+        # constructing bounding box from stats
+        bbox = (x, y), (x + width, y + height)
+        # appending to list if not too small
+        if width > 30 and height > 30:
             bboxes.append(bbox)
 
     return bboxes
 
 
-def crop_image(frame, bbox):
+# returns a cropped image
+def crop_image(frame, bbox) -> np.ndarray:
     img = frame[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]]
     return img
 
 
-def merge_dicts(*argv):
+def merge_dicts(*dicts: dict) -> dict:
+    # initialize empty dict
     merged_dict = dict()
-    for arg in argv:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
+    # iterating over the arguments
+    for mydict in dicts:
+        # typecheck
+        if isinstance(mydict, dict):
+            # iterating over one dict
+            for key, value in mydict.items():
+                # addition of number of recognitions
                 if key in merged_dict:
                     merged_dict[key] = merged_dict[key] + value
                 else:
@@ -121,21 +124,25 @@ def merge_dicts(*argv):
     return merged_dict
 
 
-def get_enar_from_dict(enar_dict):
+def get_enar_from_dict(enar_dict: dict) -> str:
+    # typecheck
     if isinstance(enar_dict, dict):
-        enar4 = enar5 = ""
+        # initializing variables
+        enar4 = ""
         enar4_num = enar5_num = -1
+        # iterating over the given dict
         for key, value in enar_dict.items():
             if len(key) == 4:
                 if value > enar4_num:
                     enar4 = key
                     enar4_num = value
-
+        enar5 = enar4
         for key, value in enar_dict.items():
             if len(key) == 5 and key[:4] == enar4:
                 if value > enar5_num:
                     enar5 = key
                     enar5_num = value
-        return enar4, enar5
+        # returning enars with the most occurrences
+        return enar5
     else:
-        return "----", "-----"
+        return ""

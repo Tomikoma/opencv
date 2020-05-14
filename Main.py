@@ -131,7 +131,7 @@ def main(argv: list):
         #         cv2.putText(modframe, "Enar: " + enar5, (40, 200), cv2.FONT_HERSHEY_SIMPLEX, 1,
         #                     (200, 200, 255))
 
-        cv2.imshow('res', resize(modframe, 1200, 1200))
+        cv2.imshow('video', resize(modframe, 1200, 1200))
         k = cv2.waitKey(5) & 0xFF
         if k == 27:
             break

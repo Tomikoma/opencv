@@ -1,4 +1,3 @@
-import scipy.ndimage.measurements as msr
 import pytesseract as pt
 import math
 import cv2

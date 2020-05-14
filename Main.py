@@ -6,6 +6,7 @@ import utils
 import sys
 import datetime
 import subprocess
+import platform
 
 # initializing lower boundary of color yellow
 lower = np.array([25, 75, 85], dtype="uint8")
@@ -170,17 +171,19 @@ def main(argv: list):
                     #print(enar4, enar5)
                 # writing time and recognized enar to file
                 f.write(str(i) + " " + (enar5 or "") + "\n")
-
         # converting video with ffmpeg
-        # and deleting temporary video file
-        command = "ffmpeg -i {} {}\nrm {}".format(
-            temp_video, filename, temp_video)
+        command = "ffmpeg -i {} {}\n".format(
+            temp_video, filename)
+        print(command)
         try:
             # running command
             output = subprocess.check_output(
                 command, stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError as e:
             print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output))
+    # and deleting temporary video file
+    delete_command = "del" if platform.system() == "Windows" else "rm"
+    subprocess.call("{} {}".format(delete_command, temp_video), shell=True)
 
 
 # calling main

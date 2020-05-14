@@ -174,7 +174,6 @@ def main(argv: list):
         # converting video with ffmpeg
         command = "ffmpeg -i {} {}\n".format(
             temp_video, filename)
-        print(command)
         try:
             # running command
             output = subprocess.check_output(
